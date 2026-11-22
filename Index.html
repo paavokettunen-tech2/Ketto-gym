@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="fi" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Kettu Gym" />
+  <meta name="theme-color" content="#0B0F17" />
+  <link id="app-favicon" rel="icon" type="image/png" href="" />
+  <link id="app-apple-icon" rel="apple-touch-icon" sizes="512x512" href="" />
+  <title>Kettu Gym – Älykäs Treenisovellus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'] },
+          colors: {
+            obsidian: '#0B0F17',
+            slatecard: '#131A26',
+            slateborder: '#1E293B'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    html, body { font-family: 'Inter', system-ui, -apple-system, sans-serif; overscroll-behavior-y: none; }
+    .safe-top { padding-top: max(0.75rem, env(safe-area-inset-top)); }
+    .safe-bottom { padding-bottom: max(0.85rem, env(safe-area-inset-bottom)); }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    @keyframes pulseBar {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    @keyframes pullCable {
+      0%, 100% { transform: translateX(0px); }
+      50% { transform: translateX(-14px); }
+    }
+    @keyframes hingeBody {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(24deg); }
+    }
+    .anim-push { animation: pulseBar 1.8s ease-in-out infinite; }
+    .anim-pull { animation: pullCable 1.8s ease-in-out infinite; }
+    .anim-hinge { transform-origin: 120px 108px; animation: hingeBody 2s ease-in-out infinite; }
+    .paused-anim * { animation-play-state: paused !important; }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-[#06090F] text-slate-900 dark:text-slate-100 antialiased selection:bg-amber-500/30">
+
+  <!-- Mobile-first App Shell -->
+  <div id="app-shell" class="mx-auto min-h-screen w-full max-w-[480px] bg-slate-50 dark:bg-obsidian md:my-4 md:min-h-[calc(100vh-2rem)] md:rounded-[32px] md:border md:border-slate-200 dark:md:border-slate-800/80 md:shadow-2xl relative flex flex-col overflow-x-hidden">
+
+    <!-- Top Brand Header -->
+    <header class="sticky top-0 z-20 px-4 pb-3 safe-top bg-slate-50/90 dark:bg-obsidian/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slateborder/80 flex items-center justify-between">
+      <button onclick="switchTab('home')" class="flex items-center gap-2.5 text-left active:scale-95 transition">
+        <div id="header-logo-slot" class="w-10 h-10 rounded-full bg-white ring-2 ring-amber-500/80 shadow-md shadow-amber-500/15 overflow-hidden shrink-0"></div>
+        <div class="leading-tight">
+          <div class="text-[16px] font-extrabold tracking-tight text-slate-900 dark:text-white">Kettu <span class="text-amber-500">Gym</span></div>
+          <div id="header-week-badge" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Viikko 75</div>
+        </div>
+      </button>
+      <span class="px-2.5 py-1 rounded-full bg-slate-200/70 dark:bg-slatecard border border-slate-200 dark:border-slateborder text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+        Nordic Pro
+      </span>
+    </header>
+
+    <!-- Main Scrollable Content -->
+    <main id="main-content" class="flex-1 px-4 pt-4 pb-28 overflow-y-auto"></main>
+
+    <!-- Floating Rest Timer Bar -->
+    <div id="rest-timer-bar" class="hidden fixed bottom-[84px] left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-[448px] z-30 rounded-2xl bg-slate-900/95 dark:bg-slatecard/95 backdrop-blur-xl border border-emerald-500/40 shadow-2xl px-4 py-3 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-sm">
+          ⏱
+        </div>
+        <div>
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Lepoajastin</div>
+          <div id="rest-timer-display" class="text-xl font-extrabold text-white tabular-nums leading-none mt-0.5">01:30</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button onclick="adjustRestTimer(-15)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold tabular-nums">-15s</button>
+        <button onclick="adjustRestTimer(15)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold tabular-nums">+15s</button>
+        <button onclick="stopRestTimer()" class="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-bold">Sulje</button>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast-container" class="pointer-events-none fixed top-20 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-[440px] flex flex-col items-center gap-2"></div>
+
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onclick="handleOverlayClick(event)">
+      <div id="modal-box" class="w-full max-w-[480px] max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-white dark:bg-slatecard border-t sm:border border-slate-200 dark:border-slateborder shadow-2xl p-5"></div>
+    </div>
+
+    <!-- Fixed 5-Tab Bottom Navigation -->
+    <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] md:bottom-4 md:rounded-b-[32px] z-30 bg-white/95 dark:bg-obsidian/95 backdrop-blur-xl border-t border-slate-200 dark:border-slateborder px-2 pt-2 safe-bottom">
+      <div class="grid grid-cols-5 gap-1">
+        <button onclick="switchTab('home')" data-tab="home" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          <span class="text-[10px] font-semibold mt-1">Koti</span>
+        </button>
+        <button onclick="switchTab('history')" data-tab="history" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <span class="text-[10px] font-semibold mt-1">Historia</span>
+        </button>
+        <button onclick="switchTab('workout')" data-tab="workout" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/></svg>
+          <span class="text-[10px] font-semibold mt-1">Treeni</span>
+        </button>
+        <button onclick="switchTab('progress')" data-tab="progress" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>
+          <span class="text-[10px] font-semibold mt-1">Kehitys</span>
+        </button>
+        <button onclick="switchTab('settings')" data-tab="settings" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+          <span class="text-[10px] font-semibold mt-1">Asetukset</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <script>
+    /* =========================================================================
+     * 1. CONSTANTS, LOGO SYSTEM & EXERCISE LIBRARY
+     * ========================================================================= */
+    const STORAGE_KEY = 'kettu_gym_paavo_v2';
+    const LOGO_STORAGE_KEY = 'kettu_gym_custom_logo_v1';
+    const FREE_DB_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises';
+
+    let activeLogoDataUrl = null;
+    let restTimerInterval = null;
+    let restTimerSeconds = 0;
+    let videoFrameInterval = null;
+
+    function getKettuMascotSVG(uid) {
+      const id = uid || 'fox';
+      return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-full block" aria-label="Kettu Gym maskotti">' +
+        '<defs><clipPath id="' + id + '-clip"><circle cx="100" cy="100" r="92"/></clipPath></defs>' +
+        '<circle cx="100" cy="100" r="95" fill="#FFFFFF"/>' +
+        '<g clip-path="url(#' + id + '-clip)">' +
+          '<path d="M72 146 C44 156 36 174 44 188 C51 200 68 198 76 184" fill="#F27D24" stroke="#0F172A" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '<path d="M55 178 C61 171 67 167 73 166" fill="none" stroke="#0F172A" stroke-width="5.5" stroke-linecap="round"/>' +
+          '<path d="M68 140 C65 162 66 184 68 202 L126 202 C128 182 126 160 118 140 Z" fill="#F27D24" stroke="#0F172A" stroke-width="6.5" stroke-linejoin="round"/>' +
+          '<path d="M79 144 C92 152 106 150 114 143 C117 164 117 184 115 202 L78 202 C77 182 77 162 79 144 Z" fill="#FFFFFF"/>' +
+          '<path d="M116 150 C128 172 144 176 156 166 L158 142 C146 146 135 144 126 136" fill="#F27D24" stroke="#0F172A" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '<path d="M144 140 C143 125 147 110 156 110 C165 110 166 123 162 136" fill="#F27D24" stroke="#0F172A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '<rect x="144" y="135" width="32" height="34" rx="12" fill="#F27D24" stroke="#0F172A" stroke-width="6"/>' +
+          '<path d="M158 143 L175 143 M158 152 L176 152 M157 161 L174 161" stroke="#0F172A" stroke-width="4.5" stroke-linecap="round"/>' +
+          '<path d="M52 88 C38 56 42 30 56 20 C75 30 88 50 92 68 Z" fill="#F27D24" stroke="#0F172A" stroke-width="6.5" stroke-linejoin="round"/>' +
+          '<path d="M57 78 C49 56 52 38 60 31 C72 40 80 54 83 67 Z" fill="#FFFFFF"/>' +
+          '<path d="M62 72 C58 58 60 47 64 42 C71 49 75 58 77 67 Z" fill="#0F172A" opacity="0.88"/>' +
+          '<path d="M110 64 C124 44 140 30 156 26 C158 48 149 74 134 90 Z" fill="#F27D24" stroke="#0F172A" stroke-width="6.5" stroke-linejoin="round"/>' +
+          '<path d="M118 66 C129 50 140 41 148 39 C148 54 141 71 131 82 Z" fill="#FFFFFF"/>' +
+          '<path d="M123 68 C131 56 138 50 142 49 C141 59 136 69 129 76 Z" fill="#0F172A" opacity="0.88"/>' +
+          '<path d="M52 94 C52 64 72 52 92 52 C96 43 102 41 105 49 C110 43 116 45 116 53 C134 58 146 74 144 96 C144 124 124 146 96 146 C68 146 52 126 52 94 Z" fill="#F27D24" stroke="#0F172A" stroke-width="6.5" stroke-linejoin="round"/>' +
+          '<path d="M40 100 L53 103 C57 109 68 112 78 109 C92 104 108 103 122 106 C134 107 142 102 150 97 L143 110 L152 115 L140 123 C133 139 115 147 95 147 C71 147 54 136 47 121 L38 116 L46 109 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="5.5" stroke-linejoin="round"/>' +
+          '<path d="M64 81 C72 74 83 74 90 79" fill="none" stroke="#0F172A" stroke-width="5" stroke-linecap="round"/>' +
+          '<path d="M104 74 C113 67 125 68 132 76" fill="none" stroke="#0F172A" stroke-width="5" stroke-linecap="round"/>' +
+          '<path d="M65 96 C73 85 86 85 93 96" fill="none" stroke="#0F172A" stroke-width="5.5" stroke-linecap="round"/>' +
+          '<ellipse cx="117" cy="91" rx="12" ry="15" fill="#FFFFFF" stroke="#0F172A" stroke-width="4.5"/>' +
+          '<ellipse cx="115" cy="92" rx="6.5" ry="9" fill="#0F172A"/>' +
+          '<circle cx="118" cy="87" r="2.8" fill="#FFFFFF"/>' +
+          '<ellipse cx="110" cy="109" rx="11" ry="7" fill="#0F172A"/>' +
+          '<ellipse cx="107" cy="106.5" rx="3.8" ry="1.8" fill="#64748B"/>' +
+          '<path d="M72 114 C84 123 104 124 118 119 C110 138 92 143 79 137 C72 133 70 123 72 114 Z" fill="#0F172A" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>' +
+          '<path d="M79 131 C87 124 99 125 106 131 C99 138 87 140 79 135 Z" fill="#F06438"/>' +
+        '</g>' +
+        '<circle cx="100" cy="100" r="95" fill="none" stroke="#F59E0B" stroke-width="6"/>' +
+      '</svg>';
+    }
+
+    function getKettuLogoMarkup(uid) {
+      if (activeLogoDataUrl) {
+        return '<img src="' + activeLogoDataUrl + '" alt="Kettu Gym logo" class="w-full h-full object-cover rounded-full block" />';
+      }
+      return getKettuMascotSVG(uid);
+    }
+
+    function updateHeaderLogo() {
+      const slot = document.getElementById('header-logo-slot');
+      if (slot) slot.innerHTML = getKettuLogoMarkup('hdr');
+    }
+
+    function updateAppIcons() {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#0B0F17';
+        ctx.fillRect(0, 0, 512, 512);
+
+        const applyLinks = () => {
+          const pngUrl = canvas.toDataURL('image/png');
+          const fav = document.getElementById('app-favicon');
+          const apple = document.getElementById('app-apple-icon');
+          if (fav) fav.href = pngUrl;
+          if (apple) apple.href = pngUrl;
+        };
+
+        const img = new Image();
+        if (activeLogoDataUrl) {
+          img.onload = () => {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(256, 256, 224, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+            ctx.clip();
+            ctx.drawImage(img, 32, 32, 448, 448);
+            ctx.restore();
+            ctx.beginPath();
+            ctx.arc(256, 256, 224, 0, Math.PI * 2);
+            ctx.strokeStyle = '#F59E0B';
+            ctx.lineWidth = 14;
+            ctx.stroke();
+            applyLinks();
+          };
+          img.src = activeLogoDataUrl;
+        } else {
+          const blob = new Blob([getKettuMascotSVG('ic512')], { type: 'image/svg+xml;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          img.onload = () => {
+            ctx.drawImage(img, 24, 24, 464, 464);
+            URL.revokeObjectURL(url);
+            applyLinks();
+          };
+          img.src = url;
+        }
+      } catch (e) {}
+    }
+
+    function cropImageToSquare(img, size) {
+      const c = document.createElement('canvas');
+      c.width = size;
+      c.height = size;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, size, size);
+      const w = img.naturalWidth || img.width;
+      const h = img.naturalHeight || img.height;
+      const side = Math.min(w, h);
+      ctx.drawImage(img, (w - side) / 2, (h - side) / 2, side, side, 0, 0, size, size);
+      return c.toDataURL('image/png');
+    }
+
+    function initLogoSystem() {
+      try {
+        const saved = localStorage.getItem(LOGO_STORAGE_KEY);
+        if (saved) activeLogoDataUrl = saved;
+      } catch (e) {}
+      updateHeaderLogo();
+      updateAppIcons();
+    }
+
+    function triggerCustomLogoUpload() {
+      const el = document.getElementById('custom-logo-input');
+      if (el) el.click();
+    }
+
+    function handleCustomLogoUpload(ev) {
+      const file = ev.target.files && ev.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            activeLogoDataUrl = cropImageToSquare(img, 256);
+            localStorage.setItem(LOGO_STORAGE_KEY, activeLogoDataUrl);
+            updateHeaderLogo();
+            updateAppIcons();
+            render();
+            showToast('Oma Kettu Gym -logo tallennettu!', 'emerald');
+          } catch (err) {
+            showToast('Kuvan tallennus epäonnistui', 'amber');
+          }
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function resetCustomLogo() {
+      try { localStorage.removeItem(LOGO_STORAGE_KEY); } catch (e) {}
+      activeLogoDataUrl = null;
+      updateHeaderLogo();
+      updateAppIcons();
+      render();
+      showToast('Oletusmaskotti palautettu', 'blue');
+    }
+
+    const MUSCLE_GROUPS = ['Selkä', 'Hauis', 'Rinta', 'Olkapää', 'Etureisi', 'Takareisi', 'Pohje', 'Vatsa'];
+
+    const MUSCLE_COLORS = {
+      'Selkä': 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+      'Hauis': 'bg-violet-500/15 text-violet-400 border-violet-500/30',
+      'Rinta': 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+      'Olkapää': 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+      'Etureisi': 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+      'Takareisi': 'bg-teal-500/15 text-teal-400 border-teal-500/30',
+      'Pohje': 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
+      'Vatsa': 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30',
+      'Pakara': 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+      'Ojentaja': 'bg-pink-500/15 text-pink-400 border-pink-500/30'
+    };
+
+    const EXERCISE_LIBRARY = {
+      rdl: {
+        id: 'rdl', name: 'Romanialainen maastaveto', muscle: 'Takareisi', secondary: ['Pakara', 'Selkä'],
+        inc: 2.5, slug: 'Romanian_Deadlift_With_Dumbbells', anim: 'hinge',
+        yt: 'Romanialainen maastaveto tekniikka', mw: 'barbell-romanian-deadlift',
+        steps: [
+          'Seiso lantion levyisessä asennossa, tanko lähellä reisiä ja polvet kevyesti koukussa.',
+          'Työnnä lantiota taaksepäin pitäen selkä suorana ja rinta auki.',
+          'Laske tankoa sääriä pitkin kunnes tunnet vahvan venytyksen takareisissä.',
+          'Purista pakaroilla lantio takaisin pystyyn hallitusti.'
+        ]
+      },
+      leg_curl: {
+        id: 'leg_curl', name: 'Reiden koukistus istuen', muscle: 'Takareisi', secondary: ['Pohje'],
+        inc: 2.5, slug: 'Seated_Leg_Curl', anim: 'pull',
+        yt: 'Reiden koukistus istuen tekniikka', mw: 'seated-leg-curl',
+        steps: [
+          'Säädä selkänoja ja reisituki napakasti paikoilleen.',
+          'Koukista jalat hallitusti taakse ja purista takareisiä lopussa.',
+          'Palauta hitaasti jarruttaen täyteen ojennukseen.'
+        ]
+      },
+      incline_bench: {
+        id: 'incline_bench', name: 'Penkkipunnerrus vinopenkissä', muscle: 'Rinta', secondary: ['Olkapää', 'Ojentaja'],
+        inc: 2.5, slug: 'Barbell_Incline_Bench_Press_-_Medium_Grip', anim: 'push',
+        yt: 'Vinopenkki tangolla tekniikka', mw: 'barbell-incline-bench-press',
+        steps: [
+          'Aseta penkki noin 30 asteen kulmaan ja vedä lavat yhteen.',
+          'Laske tanko hallitusti ylärinnalle kyynärpäät noin 45 asteen kulmassa.',
+          'Punnerra räjähtävästi ylös säilyttäen lapatuen.'
+        ]
+      },
+      db_bench: {
+        id: 'db_bench', name: 'Penkkipunnerrus käsipainoilla', muscle: 'Rinta', secondary: ['Ojentaja', 'Olkapää'],
+        inc: 2.5, slug: 'Dumbbell_Bench_Press', anim: 'push',
+        yt: 'Penkkipunnerrus käsipainoilla', mw: 'dumbbell-bench-press',
+        steps: [
+          'Asetu selinmakuulle, jalat tukevasti lattiassa ja lavat yhdessä.',
+          'Laske käsipainot rinnan sivuille hyvään venytykseen.',
+          'Punnerra painot hallitusti ylös kohti keskustaa.'
+        ]
+      },
+      chest_press: {
+        id: 'chest_press', name: 'Rintaprässi laitteessa', muscle: 'Rinta', secondary: ['Ojentaja'],
+        inc: 2.5, slug: 'Machine_Bench_Press', anim: 'push',
+        yt: 'Rintaprässi tekniikka', mw: 'machine-chest-press',
+        steps: [
+          'Säädä penkki niin, että kahvat ovat rinnan keskikohdalla.',
+          'Työnnä kahvat eteenpäin pitämällä hartiat alhaalla.',
+          'Jarruta rauhallisesti takaisin lähtöasentoon.'
+        ]
+      },
+      pullover: {
+        id: 'pullover', name: 'Pullover taljassa, köysi', muscle: 'Selkä', secondary: ['Vatsa'],
+        inc: 2.5, slug: 'Straight-Arm_Pulldown', anim: 'pull',
+        yt: 'Pullover taljassa köysi', mw: 'cable-straight-arm-pulldown',
+        steps: [
+          'Ota köydestä kiinni ylätaljassa ja nojaa kevyesti eteenpäin.',
+          'Pidä kädet lähes suorina ja vedä köysi kaarella kohti reisiä.',
+          'Purista leveitä selkälihaksia ala-asennossa ja palauta venytykseen.'
+        ]
+      },
+      seated_row: {
+        id: 'seated_row', name: 'Alatalja V-kahvalla', muscle: 'Selkä', secondary: ['Hauis'],
+        inc: 2.5, slug: 'Seated_Cable_Rows', anim: 'pull',
+        yt: 'Alatalja V-kahvalla tekniikka', mw: 'cable-seated-row',
+        steps: [
+          'Ota V-kahvasta kiinni ja työnnä itsesi jaloilla tukevaan lähtöasentoon.',
+          'Pidä alaselkä suorana; yläselkä saa venyä kevyesti eteen.',
+          'Vedä kyynärpäät kohti kylkiä ja kahva kohti napaa, puristaen lapoja yhteen.',
+          'Hallitse jarrutusvaihe pitkään venytykseen asti.'
+        ]
+      },
+      lat_pulldown: {
+        id: 'lat_pulldown', name: 'Ylätalja leveällä otteella', muscle: 'Selkä', secondary: ['Hauis'],
+        inc: 2.5, slug: 'Wide-Grip_Lat_Pulldown', anim: 'pull',
+        yt: 'Ylätalja tekniikka', mw: 'cable-pulldown',
+        steps: [
+          'Ota hartioita leveämpi myötäote tangosta ja lukitse polvet tyynyn alle.',
+          'Vedä tanko kohti ylärintaa ohjaamalla kyynärpäitä alas ja kylkiin.',
+          'Palauta hallitusti ylös täyteen venytykseen.'
+        ]
+      },
+      calf_press: {
+        id: 'calf_press', name: 'Pohjenousut jalkaprässissä', muscle: 'Pohje', secondary: [],
+        inc: 2.5, slug: 'Calf_Press_On_The_Leg_Press_Machine', anim: 'push',
+        yt: 'Pohjenousut jalkaprässissä', mw: 'leg-press-calf-raise',
+        steps: [
+          'Aseta päkiät jalkaprässin alareunaan ja pidä polvet lähes suorina.',
+          'Päästä kantapäät hitaasti alas syvään venytykseen (1 sekunnin pysäytys).',
+          'Työnnä päkiöillä voimakkaasti ylös täyteen supistukseen.'
+        ]
+      },
+      calf_standing: {
+        id: 'calf_standing', name: 'Pohjenousu seisten laitteessa', muscle: 'Pohje', secondary: [],
+        inc: 2.5, slug: 'Standing_Calf_Raises', anim: 'push',
+        yt: 'Pohjenousu seisten', mw: 'standing-calf-raise',
+        steps: [
+          'Aseta hartiat pehmusteiden alle ja päkiät korokkeelle.',
+          'Laske kantapäät alas venytykseen ja nouse hallitusti ylös.'
+        ]
+      },
+      leg_press: {
+        id: 'leg_press', name: 'Jalkaprässi', muscle: 'Etureisi', secondary: ['Pakara'],
+        inc: 5, slug: 'Leg_Press', anim: 'push',
+        yt: 'Jalkaprässi tekniikka', mw: 'leg-press',
+        steps: [
+          'Aseta jalat hartioiden leveydelle kelkan ala-/keskiosaan.',
+          'Laske kelkka hallitusti alas niin syvälle kuin alaselkä pysyy penkissä.',
+          'Työnnä koko jalkapohjalla ylös jättämättä polvia täysin lukkoon.'
+        ]
+      },
+      reverse_lunge: {
+        id: 'reverse_lunge', name: 'Askelkyykky taakse tangolla', muscle: 'Etureisi', secondary: ['Pakara'],
+        inc: 2.5, slug: 'Barbell_Lunge', anim: 'hinge',
+        yt: 'Askelkyykky taakse tangolla', mw: 'barbell-reverse-lunge',
+        steps: [
+          'Astu toisella jalalla askel taakse ja laske takapolvi lähelle lattiaa.',
+          'Pidä etujalan koko jalkapohja tukevasti lattiassa.',
+          'Pidä ylävartalo tiukkana ja kevyessä etunojassa pakara-aktivaatiota varten.',
+          'Ponnista etujalalla takaisin lähtöasentoon; tee kaikki toistot ensin yhdellä jalalla.'
+        ]
+      },
+      leg_ext: {
+        id: 'leg_ext', name: 'Reiden ojennus laitteessa', muscle: 'Etureisi', secondary: [],
+        inc: 2.5, slug: 'Leg_Extensions', anim: 'push',
+        yt: 'Reiden ojennus laitteessa', mw: 'leg-extension',
+        steps: [
+          'Säädä rulla nilkkojen päälle ja pidä lantio penkissä kiinni.',
+          'Ojenna polvet suoriksi ja purista etureisiä sekunnin ajan ylhäällä.',
+          'Laske paino hitaasti jarruttaen alas.'
+        ]
+      },
+      ohp_onearm: {
+        id: 'ohp_onearm', name: 'Yhden käden pystypunnerrus käsipainolla', muscle: 'Olkapää', secondary: ['Ojentaja', 'Vatsa'],
+        inc: 2.5, slug: 'Dumbbell_One-Arm_Shoulder_Press', anim: 'push',
+        yt: 'Yhden käden pystypunnerrus käsipainolla', mw: 'single-arm-dumbbell-overhead-press',
+        steps: [
+          'Seiso tai istu ryhdikkäästi, keskivartalo tiukkana.',
+          'Punnerra käsipaino suoraan ylös olkapään linjassa.',
+          'Laske hallitusti takaisin olkapään tasolle.'
+        ]
+      },
+      lat_raise: {
+        id: 'lat_raise', name: 'Vipunostot käsipainoilla', muscle: 'Olkapää', secondary: [],
+        inc: 1, slug: 'Side_Lateral_Raise', anim: 'push',
+        yt: 'Vipunostot sivulle käsipainoilla', mw: 'dumbbell-lateral-raise',
+        steps: [
+          'Seiso kevyessä etunojassa, käsipainot reisien sivuilla.',
+          'Nosta kädet sivuille hartiatasolle kyynärpäät edellä.',
+          'Laske painot rauhallisesti alas säilyttäen jännityksen.'
+        ]
+      },
+      db_curl: {
+        id: 'db_curl', name: 'Hauiskääntö käsipainoilla', muscle: 'Hauis', secondary: [],
+        inc: 1, slug: 'Dumbbell_Bicep_Curl', anim: 'pull',
+        yt: 'Hauiskääntö käsipainoilla', mw: 'dumbbell-curl',
+        steps: [
+          'Pidä kyynärpäät lähellä kylkiä ja rintakehä auki.',
+          'Käännä käsipainot ylös puristaen hauiksia.',
+          'Laske hallitusti alas täyteen ojennukseen.'
+        ]
+      },
+      hammer_curl: {
+        id: 'hammer_curl', name: 'Hammer-kääntö käsipainoilla', muscle: 'Hauis', secondary: [],
+        inc: 1, slug: 'Hammer_Curls', anim: 'pull',
+        yt: 'Hammer kääntö käsipainoilla', mw: 'dumbbell-hammer-curl',
+        steps: [
+          'Pidä kämmenet vastakkain neutraalissa otteessa koko liikkeen ajan.',
+          'Nosta painot hallitusti ylös ja jarruta alas.'
+        ]
+      },
+      cable_crunch: {
+        id: 'cable_crunch', name: 'Vatsarutistus taljassa köydellä', muscle: 'Vatsa', secondary: [],
+        inc: 2.5, slug: 'Cable_Crunch', anim: 'hinge',
+        yt: 'Vatsarutistus taljassa köydellä', mw: 'cable-crunch',
+        steps: [
+          'Polvistu ylätaljan eteen ja tuo köysi pään sivuille.',
+          'Pyöristä yläselkää ja rutista kylkiluita kohti lantiota.',
+          'Palauta hallitusti ylös venytykseen.'
+        ]
+      },
+      plank_weighted: {
+        id: 'plank_weighted', name: 'Voimapyörä / Lankku', muscle: 'Vatsa', secondary: [],
+        inc: 2.5, slug: 'Ab_Roller', anim: 'hinge',
+        yt: 'Voimapyörä tekniikka', mw: 'ab-wheel-rollout',
+        steps: [
+          'Pidä lantio käännettynä alle ja keskivartalo täysin tiukkana.',
+          'Rullaa hallitusti eteen ja vedä vatsalihaksilla takaisin.'
+        ]
+      }
+    };
+
+    const GOALS_LIST = [
+      { id: 'hypertrophy', name: 'Isommat lihakset', desc: 'Kasvattaa lihasmassaa (8–12 toistoa).' },
+      { id: 'strength', name: 'Enemmän voimaa', desc: 'Kehittää maksimivoimaa (4–6 toistoa).' },
+      { id: 'athletic', name: 'Atleettisuus', desc: 'Vähentää rasvaa ja parantaa erottuvuutta.' },
+      { id: 'fatloss', name: 'Laihduttaminen', desc: 'Pudottaa painoa lihasmassaa säilyttäen.' },
+      { id: 'wellbeing', name: 'Yleinen hyvinvointi', desc: 'Energisempi arki ja parempi kunto.' },
+      { id: 'mobility', name: 'Kipujen ehkäisy', desc: 'Tukea terveyttä ja nivelten hyvinvointia.' }
+    ];
+
+    /* =========================================================================
+     * 2. DEFAULT STATE & PERSISTENCE
+     * ========================================================================= */
+    function getDefaultState() {
+      return {
+        userName: 'Paavo',
+        theme: 'dark',
+        activeTab: 'home',
+        selectedWorkoutIdx: 1, // 0 = Treeni 1, 1 = Treeni 2, 2 = Treeni 3
+        currentWeek: 75,
+        rotationWeek: 7,
+        rotationCycleWeeks: 10,
+        progressRange: 'all',
+        openAccordions: { 'Hauis': true },
+        settings: {
+          goals: ['hypertrophy', 'fatloss'],
+          workoutsPerWeek: 3,
+          split: 'Koko, Koko, Koko',
+          durationMin: 60,
+          scheduleDays: [true, false, true, false, true, false, false], // Ma, Ke, Pe
+          excludedExercises: []
+        },
+        volumeTargets: {
+          'Selkä': 13, 'Hauis': 3, 'Rinta': 12, 'Olkapää': 9,
+          'Etureisi': 9, 'Takareisi': 4, 'Pohje': 4, 'Vatsa': 4
+        },
+        workouts: [
+          {
+            id: 'w1', title: 'Treeni 1', subtitle: 'Koko keho A', completedThisWeek: true, lastDate: '16.11.2026',
+            exercises: [
+              { exId: 'rdl', minReps: 5, maxReps: 5, autoSwapped: false, sets: [
+                { weight: 77.5, reps: 5, rir: 2, done: true }, { weight: 77.5, reps: 5, rir: 2, done: true }
+              ]},
+              { exId: 'incline_bench', minReps: 6, maxReps: 6, autoSwapped: false, sets: [
+                { weight: 52.5, reps: 6, rir: 2, done: true }, { weight: 52.5, reps: 6, rir: 1, done: true }
+              ]},
+              { exId: 'pullover', minReps: 7, maxReps: 11, autoSwapped: false, sets: [
+                { weight: 28.75, reps: 11, rir: 1, done: true }
+              ]},
+              { exId: 'calf_press', minReps: 8, maxReps: 10, autoSwapped: false, sets: [
+                { weight: 97.5, reps: 10, rir: 2, done: true }, { weight: 97.5, reps: 10, rir: 1, done: true }
+              ]},
+              { exId: 'leg_press', minReps: 8, maxReps: 8, autoSwapped: false, sets: [
+                { weight: 135, reps: 8, rir: 2, done: true }, { weight: 135, reps: 8, rir: 1, done: true }
+              ]},
+              { exId: 'ohp_onearm', minReps: 8, maxReps: 12, autoSwapped: false, sets: [
+                { weight: 15, reps: 12, rir: 1, done: true }, { weight: 15, reps: 12, rir: 1, done: true }
+              ]}
+            ]
+          },
+          {
+            id: 'w2', title: 'Treeni 2', subtitle: 'Koko keho B', completedThisWeek: false, lastDate: null,
+            exercises: [
+              { exId: 'seated_row', minReps: 8, maxReps: 12, autoSwapped: false, sets: [
+                { weight: 65, reps: 10, rir: 2, done: false }, { weight: 65, reps: 10, rir: 2, done: false }, { weight: 65, reps: 10, rir: 1, done: false }
+              ]},
+              { exId: 'reverse_lunge', minReps: 8, maxReps: 10, autoSwapped: true, sets: [
+                { weight: 40, reps: 10, rir: 2, done: false }, { weight: 40, reps: 10, rir: 2, done: false }
+              ]},
+              { exId: 'db_bench', minReps: 8, maxReps: 12, autoSwapped: false, sets: [
+                { weight: 22.5, reps: 12, rir: 2, done: false }, { weight: 22.5, reps: 12, rir: 1, done: false }
+              ]},
+              { exId: 'lat_raise', minReps: 10, maxReps: 15, autoSwapped: false, sets: [
+                { weight: 10, reps: 14, rir: 1, done: false }, { weight: 10, reps: 14, rir: 1, done: false }
+              ]},
+              { exId: 'db_curl', minReps: 8, maxReps: 12, autoSwapped: false, sets: [
+                { weight: 14, reps: 11, rir: 1, done: false }, { weight: 14, reps: 11, rir: 1, done: false }
+              ]},
+              { exId: 'cable_crunch', minReps: 10, maxReps: 15, autoSwapped: false, sets: [
+                { weight: 35, reps: 14, rir: 2, done: false }, { weight: 35, reps: 14, rir: 1, done: false }
+              ]}
+            ]
+          },
+          {
+            id: 'w3', title: 'Treeni 3', subtitle: 'Koko keho C', completedThisWeek: false, lastDate: null,
+            exercises: [
+              { exId: 'lat_pulldown', minReps: 8, maxReps: 12, autoSwapped: false, sets: [
+                { weight: 60, reps: 10, rir: 2, done: false }, { weight: 60, reps: 10, rir: 2, done: false }, { weight: 60, reps: 10, rir: 1, done: false }
+              ]},
+              { exId: 'leg_ext', minReps: 10, maxReps: 12, autoSwapped: false, sets: [
+                { weight: 55, reps: 12, rir: 2, done: false }, { weight: 55, reps: 12, rir: 1, done: false }
+              ]},
+              { exId: 'leg_curl', minReps: 10, maxReps: 12, autoSwapped: false, sets: [
+                { weight: 50, reps: 11, rir: 2, done: false }, { weight: 50, reps: 11, rir: 1, done: false }
+              ]},
+              { exId: 'chest_press', minReps: 8, maxReps: 12, autoSwapped: false, sets: [
+                { weight: 70, reps: 10, rir: 2, done: false }, { weight: 70, reps: 10, rir: 1, done: false }
+              ]},
+              { exId: 'calf_standing', minReps: 10, maxReps: 12, autoSwapped: false, sets: [
+                { weight: 80, reps: 12, rir: 2, done: false }, { weight: 80, reps: 12, rir: 1, done: false }
+              ]}
+            ]
+          }
+        ],
+        history: [
+          { id: 'h1', month: 'Marraskuu', date: '16.11.', fullDate: '16.11.2026', title: 'Treeni 1', pct: 100, exercises: [
+            { name: 'Romanialainen maastaveto', sets: ['77.5kg × 5/5', '77.5kg × 5/5'] },
+            { name: 'Penkkipunnerrus vinopenkissä', sets: ['52.5kg × 6/6', '52.5kg × 6/6'] },
+            { name: 'Pullover taljassa, köysi', sets: ['28.75kg × 11/7-11'] },
+            { name: 'Pohjenousut jalkaprässissä', sets: ['97.5kg × 10/8-10', '97.5kg × 10/8-10'] },
+            { name: 'Jalkaprässi', sets: ['135kg × 8/8', '135kg × 8/8'] },
+            { name: 'Yhden käden pystypunnerrus käsipainolla', sets: ['15kg × 12/8-12', '15kg × 12/8-12'] }
+          ]},
+          { id: 'h2', month: 'Marraskuu', date: '15.11.', fullDate: '15.11.2026', title: 'Treeni 3', pct: 63, exercises: [{ name: 'Ylätalja leveällä otteella', sets: ['60kg × 10', '60kg × 9'] }, { name: 'Rintaprässi laitteessa', sets: ['70kg × 9'] }] },
+          { id: 'h3', month: 'Marraskuu', date: '13.11.', fullDate: '13.11.2026', title: 'Treeni 2', pct: 89, exercises: [{ name: 'Alatalja V-kahvalla', sets: ['65kg × 10', '65kg × 10'] }, { name: 'Askelkyykky taakse tangolla', sets: ['40kg × 10', '40kg × 10'] }] },
+          { id: 'h4', month: 'Marraskuu', date: '6.11.', fullDate: '6.11.2026', title: 'Treeni 1', pct: 89, exercises: [{ name: 'Jalkaprässi', sets: ['130kg × 8', '130kg × 8'] }] },
+          { id: 'h5', month: 'Marraskuu', date: '4.11.', fullDate: '4.11.2026', title: 'Treeni 3', pct: 74, exercises: [{ name: 'Ylätalja leveällä otteella', sets: ['57.5kg × 10', '57.5kg × 10'] }] },
+          { id: 'h6', month: 'Marraskuu', date: '3.11.', fullDate: '3.11.2026', title: 'Treeni 2', pct: 93, exercises: [{ name: 'Alatalja V-kahvalla', sets: ['62.5kg × 11', '62.5kg × 10'] }] },
+          { id: 'h7', month: 'Lokakuu', date: '29.10.', fullDate: '29.10.2026', title: 'Treeni 1', pct: 83, exercises: [{ name: 'Romanialainen maastaveto', sets: ['75kg × 5', '75kg × 5'] }] },
+          { id: 'h8', month: 'Lokakuu', date: '26.10.', fullDate: '26.10.2026', title: 'Treeni 3', pct: 93, exercises: [{ name: 'Rintaprässi laitteessa', sets: ['67.5kg × 11', '67.5kg × 10'] }] },
+          { id: 'h9', month: 'Lokakuu', date: '24.10.', fullDate: '24.10.2026', title: 'Treeni 2', pct: 56, exercises: [{ name: 'Hauiskääntö käsipainoilla', sets: ['14kg × 10'] }] },
+          { id: 'h10', month: 'Lokakuu', date: '22.10.', fullDate: '22.10.2026', title: 'Treeni 1', pct: 89, exercises: [{ name: 'Jalkaprässi', sets: ['130kg × 8', '130kg × 8'] }] },
+          { id: 'h11', month: 'Lokakuu', date: '15.10.', fullDate: '15.10.2026', title: 'Treeni 2', pct: 94, exercises: [{ name: 'Alatalja V-kahvalla', sets: ['62.5kg × 10', '62.5kg × 10'] }] },
+          { id: 'h12', month: 'Lokakuu', date: '7.10.', fullDate: '7.10.2026', title: 'Treeni 1', pct: 100, exercises: [{ name: 'Penkkipunnerrus vinopenkissä', sets: ['50kg × 6', '50kg × 6'] }] }
+        ],
+        progressIndex: [
+          { wk: 4, val: 6 }, { wk: 12, val: 38 }, { wk: 20, val: 76 }, { wk: 28, val: 118 },
+          { wk: 36, val: 148 }, { wk: 44, val: 174 }, { wk: 52, val: 199 }, { wk: 60, val: 221 },
+          { wk: 68, val: 243 }, { wk: 72, val: 254 }, { wk: 75, val: 263 }
+        ]
+      };
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return getDefaultState();
+    }
+
+    let state = loadState();
+
+    function saveState() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+    }
+
+    function applyTheme() {
+      const html = document.documentElement;
+      if (state.theme === 'dark') html.classList.add('dark');
+      else html.classList.remove('dark');
+    }
+
+    /* =========================================================================
+     * 3. HELPERS: TOAST, MODAL, REST TIMER, VOLUME, 1RM
+     * ========================================================================= */
+    function showToast(msg, tone) {
+      const box = document.getElementById('toast-container');
+      const colors = {
+        emerald: 'bg-emerald-500/95 text-white border-emerald-400',
+        blue: 'bg-blue-600/95 text-white border-blue-400',
+        amber: 'bg-amber-500/95 text-slate-950 border-amber-300'
+      };
+      const el = document.createElement('div');
+      el.className = 'px-4 py-2.5 rounded-2xl border shadow-xl text-xs font-bold tracking-wide transition-all ' + (colors[tone] || colors.emerald);
+      el.textContent = msg;
+      box.appendChild(el);
+      setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 250); }, 2600);
+    }
+
+    function openModal(html) {
+      const ov = document.getElementById('modal-overlay');
+      const box = document.getElementById('modal-box');
+      box.innerHTML = html;
+      ov.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      if (videoFrameInterval) { clearInterval(videoFrameInterval); videoFrameInterval = null; }
+      document.getElementById('modal-overlay').classList.add('hidden');
+    }
+
+    function handleOverlayClick(e) {
+      if (e.target.id === 'modal-overlay') closeModal();
+    }
+
+    function startRestTimer(seconds) {
+      restTimerSeconds = seconds || 90;
+      const bar = document.getElementById('rest-timer-bar');
+      bar.classList.remove('hidden');
+      updateRestTimerDisplay();
+      if (restTimerInterval) clearInterval(restTimerInterval);
+      restTimerInterval = setInterval(() => {
+        restTimerSeconds--;
+        if (restTimerSeconds <= 0) {
+          stopRestTimer();
+          showToast('Lepo valmis – seuraava sarja!', 'emerald');
+        } else {
+          updateRestTimerDisplay();
+        }
+      }, 1000);
+    }
+
+    function adjustRestTimer(delta) {
+      restTimerSeconds = Math.max(5, restTimerSeconds + delta);
+      updateRestTimerDisplay();
+    }
+
+    function stopRestTimer() {
+      if (restTimerInterval) { clearInterval(restTimerInterval); restTimerInterval = null; }
+      document.getElementById('rest-timer-bar').classList.add('hidden');
+    }
+
+    function updateRestTimerDisplay() {
+      const m = String(Math.floor(restTimerSeconds / 60)).padStart(2, '0');
+      const s = String(restTimerSeconds % 60).padStart(2, '0');
+      const el = document.getElementById('rest-timer-display');
+      if (el) el.textContent = m + ':' + s;
+    }
+
+    function computeWeeklyVolume() {
+      const done = {};
+      MUSCLE_GROUPS.forEach(m => { done[m] = 0; });
+      state.workouts.forEach(w => {
+        w.exercises.forEach(ex => {
+          const lib = EXERCISE_LIBRARY[ex.exId];
+          if (!lib) return;
+          const completedSets = ex.sets.filter(s => s.done).length;
+          if (done[lib.muscle] !== undefined) done[lib.muscle] += completedSets;
+        });
+      });
+      return done;
+    }
+
+    function estimate1RM(weight, reps) {
+      if (!weight || !reps) return 0;
+      return Math.round(weight * (1 + reps / 30) * 10) / 10;
+    }
+
+    function formatRange(minR, maxR) {
+      return minR === maxR ? String(minR) : (minR + '-' + maxR);
+    }
+
+    /* =========================================================================
+     * 4. NAVIGATION & RENDER ROUTER
+     * ========================================================================= */
+    function switchTab(tab) {
+      state.activeTab = tab;
+      saveState();
+      render();
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+
+    function updateNavStyles() {
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        const active = btn.dataset.tab === state.activeTab;
+        btn.className = 'nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl transition ' +
+          (active ? 'text-amber-500 bg-amber-500/10' : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300');
+      });
+    }
+
+    function render() {
+      applyTheme();
+      updateNavStyles();
+      updateHeaderLogo();
+      const wkBadge = document.getElementById('header-week-badge');
+      if (wkBadge) wkBadge.textContent = 'Viikko ' + state.currentWeek;
+
+      const main = document.getElementById('main-content');
+      if (state.activeTab === 'home') main.innerHTML = renderHome();
+      else if (state.activeTab === 'history') main.innerHTML = renderHistory();
+      else if (state.activeTab === 'workout') main.innerHTML = renderWorkout();
+      else if (state.activeTab === 'progress') main.innerHTML = renderProgress();
+      else if (state.activeTab === 'settings') main.innerHTML = renderSettings();
+    }
+
+    /* =========================================================================
+     * 5. TAB 1: KOTI (HOME)
+     * ========================================================================= */
+    function renderHome() {
+      const days = ['Ma', 'Ti', 'Ke', 'To', 'Pe', 'La', 'Su'];
+      const todayIdx = 6; // Su (Sunnuntai)
+      const doneWorkouts = state.workouts.filter(w => w.completedThisWeek).length;
+      const volDone = computeWeeklyVolume();
+      const nextWorkoutIdx = state.workouts.findIndex(w => !w.completedThisWeek);
+      const targetIdx = nextWorkoutIdx >= 0 ? nextWorkoutIdx : 0;
+
+      let dayGridHtml = '';
+      days.forEach((d, idx) => {
+        const isTrain = state.settings.scheduleDays[idx];
+        const isToday = idx === todayIdx;
+        const isDone = idx === 0 && state.workouts[0].completedThisWeek;
+        let cls = 'rounded-2xl p-2.5 text-center border transition ';
+        if (isToday) cls += 'bg-blue-600/20 border-blue-500 text-blue-400 col-span-2';
+        else if (isDone) cls += 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400';
+        else cls += 'bg-slate-100 dark:bg-obsidian border-slate-200 dark:border-slateborder text-slate-600 dark:text-slate-400';
+        dayGridHtml += '<div class="' + cls + '">' +
+          '<div class="text-[10px] font-bold uppercase tracking-wider opacity-80">' + (isToday ? 'Tänään (' + d + ')' : d) + '</div>' +
+          '<div class="text-xs font-extrabold mt-0.5">' + (isTrain ? 'Treeni' : 'Välipäivä') + '</div>' +
+        '</div>';
+      });
+
+      let barsHtml = '';
+      state.workouts.forEach((w, idx) => {
+        const totalSets = w.exercises.reduce((a, e) => a + e.sets.length, 0);
+        const doneSets = w.exercises.reduce((a, e) => a + e.sets.filter(s => s.done).length, 0);
+        const pct = totalSets ? Math.round((doneSets / totalSets) * 100) : 0;
+        barsHtml += '<button onclick="openWorkoutAt(' + idx + ')" class="flex flex-col items-center gap-2 group">' +
+          '<div class="w-14 h-36 rounded-2xl bg-slate-200 dark:bg-obsidian border border-slate-300 dark:border-slateborder overflow-hidden flex flex-col justify-end relative">' +
+            '<div class="w-full transition-all duration-500 ' + (pct >= 80 ? 'bg-emerald-500' : 'bg-blue-500') + '" style="height:' + pct + '%"></div>' +
+            '<span class="absolute top-2 inset-x-0 text-center text-[11px] font-extrabold ' + (pct > 75 ? 'text-white' : 'text-slate-500 dark:text-slate-400') + ' tabular-nums">' + pct + '%</span>' +
+          '</div>' +
+          '<div class="text-center">' +
+            '<div class="text-xs font-bold text-slate-800 dark:text-slate-200">' + w.title + '</div>' +
+            '<div class="text-[10px] text-slate-500">' + (w.lastDate || 'Odottaa') + '</div>' +
+          '</div>' +
+        '</button>';
+      });
+
+      let volHtml = '';
+      MUSCLE_GROUPS.forEach(m => {
+        const target = state.volumeTargets[m] || 6;
+        const done = volDone[m] || 0;
+        const pct = Math.min(100, Math.round((done / target) * 100));
+        volHtml += '<div class="rounded-xl bg-slate-100 dark:bg-obsidian border border-slate-200 dark:border-slateborder px-3.5 py-2.5">' +
+          '<div class="flex items-center justify-between text-xs font-bold">' +
+            '<span class="text-slate-800 dark:text-slate-200">' + m + '</span>' +
+            '<span class="text-slate-500 dark:text-slate-400 tabular-nums">' + done + ' / ' + target + ' sarjaa</span>' +
+          '</div>' +
+          '<div class="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 mt-1.5 overflow-hidden">' +
+            '<div class="h-full rounded-full ' + (pct >= 100 ? 'bg-emerald-500' : 'bg-blue-500') + '" style="width:' + pct + '%"></div>' +
+          '</div>' +
+        '</div>';
+      });
+
+      return '<div class="space-y-5">' +
+        '<div class="flex items-center justify-between gap-2">' +
+          '<div class="flex items-center gap-3">' +
+            '<div class="w-12 h-12 rounded-full bg-white ring-2 ring-amber-500/80 shadow-md overflow-hidden shrink-0">' + getKettuLogoMarkup('home') + '</div>' +
+            '<div>' +
+              '<h1 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">Hei ' + state.userName + '!</h1>' +
+              '<p class="text-xs text-slate-500 dark:text-slate-400">Treeniohjelmasi, viikko ' + state.currentWeek + '</p>' +
+            '</div>' +
+          '</div>' +
+          '<button onclick="switchTab(\'settings\')" class="px-3 py-1.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-500 dark:text-blue-400 text-[11px] font-bold tabular-nums shrink-0">' +
+            'Liikejakso: vk ' + state.rotationWeek + ' / ' + state.rotationCycleWeeks +
+          '</button>' +
+        '</div>' +
+
+        '<section class="rounded-3xl bg-white dark:bg-slatecard border border-slate-200 dark:border-slateborder p-4 shadow-sm space-y-3.5">' +
+          '<div class="grid grid-cols-2 gap-2">' + dayGridHtml + '</div>' +
+          '<div class="rounded-2xl bg-slate-100 dark:bg-obsidian border border-slate-200 dark:border-slateborder p-4 text-center space-y-3">' +
+            '<div class="text-xs text-slate-600 dark:text-slate-400">Seuraavana vuorossa: <strong class="text-slate-900 dark:text-white">' + state.workouts[targetIdx].title + ' (' + state.workouts[targetIdx].subtitle + ')</strong></div>' +
+            '<button onclick="openWorkoutPreviewModal(' + targetIdx + ')" class="text-xs font-semibold text-blue-500 dark:text-blue-400 underline underline-offset-4">Katso treenin sisältö</button>' +
+            '<button onclick="openWorkoutAt(' + targetIdx + ')" class="w-full py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 active:scale-[0.99] text-slate-950 font-extrabold text-sm tracking-wide shadow-lg shadow-amber-500/20 transition">' +
+              'ALOITA TREENI →' +
+            '</button>' +
+          '</div>' +
+        '</section>' +
+
+        '<section class="rounded-3xl bg-white dark:bg-slatecard border border-slate-200 dark:border-slateborder p-4 shadow-sm">' +
+          '<div class="flex items-center justify-between mb-4">' +
+            '<h2 class="text-sm font-extrabold text-slate-900 dark:text-white">Viikon treenit – Suoritettu ' + doneWorkouts + '/' + state.workouts.length + '</h2>' +
+            '<span class="text-[11px] font-bold text-emerald-500">' + Math.round((doneWorkouts / state.workouts.length) * 100) + '%</span>' +
+          '</div>' +
+          '<div class="flex items-end justify-around py-1">' + barsHtml + '</div>' +
+        '</section>' +
+
+        '<section class="rounded-3xl bg-white dark:bg-slatecard border border-slate-200 dark:border-slateborder p-4 shadow-sm space-y-2.5">' +
+          '<h2 class="text-sm font-extrabold text-slate-900 dark:text-white mb-1">Viikkovolyymi</h2>' +
+          volHtml +
+        '</section>' +
+      '</div>';
+    }
+
+    function openWorkoutAt(idx) {
+      state.selectedWorkoutIdx = idx;
+      switchTab('workout');
+    }
+
+    function openWorkoutPreviewModal(idx) {
+      const w = state.workouts[idx];
+      let list = '';
+      w.exercises.forEach(ex => {
+        const lib = EXERCISE_LIBRARY[ex.exId];
+        if (!lib) return;
+        list += '<div class="flex items-center justify-between py-2 border-b border-slate-200 dark:border-slateborder last:border-0 text-xs">' +
+          '<span class="font-bold text-slate-900 dark:text-white">' + lib.name + '</span>' +
+          '<span class="text-slate-500 tabular-nums">' + ex.sets.length + ' × ' + formatRange(ex.minReps, ex.maxReps) + '</span>' +
+        '</div>';
+      });
+      openModal(
+        '<div class="flex items-center justify-between mb-3">' +
+          '<h3 class="text-base font-extrabold text-slate-900 dark:text-white">' + w.title + ' – ' + w.subtitle + '</h3>' +
+          '<button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-200 dark:bg-obsidian text-slate-500 font-bold">✕</button>' +
+        '</div>' +
+        '<div class="mb-4">' + list + '</div>' +
+        '<button onclick="closeModal(); openWorkoutAt(' + idx + ')" class="w-full py-3 rounded-2xl bg-amber-500 text-slate-950 font-extrabold text-sm">Aloita tämä treeni →</button>'
+      );
+    }
+
+    /* =========================================================================
+     * 6. TAB 2: TREENI (ACTIVE WORKOUT & DOUBLE PROGRESSION)
+     * ========================================================================= */
+    function renderWorkout() {
+      const wIdx = state.selectedWorkoutIdx;
+      const w = state.workouts[wIdx];
+
+      let tabsHtml = '';
+      state.workouts.forEach((wk, i) => {
+        const active = i === wIdx;
+        tabsHtml += '<button onclick="selectWorkout(' + i + ')" class="flex-1 py-2.5 rounded-xl text-xs font-extrabold transition ' +
+          (active ? 'bg-amber-500 text-slate-950 shadow' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white') + '">' +
+          wk.title + (wk.completedThisWeek ? ' ✓' : '') +
+        '</button>';
+      });
+
+      let cardsHtml = '';
+      w.exercises.forEach((ex, exIdx) => {
+        const lib = EXERCISE_LIBRARY[ex.exId];
+        if (!lib) return;
+        const mCls = MUSCLE_COLORS[lib.muscle] || 'bg-slate-500/15 text-slate-400 border-slate-500/30';
+        const autoBadge = ex.autoSwapped
+          ? '<div class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-blue-400 mt-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span>Liike vaihdettu automaattisesti</div>'
+          : '';
+
+        let pillsHtml = '';
+        ex.sets.forEach((s, sIdx) => {
+          const pillCls = s.done
+            ? 'bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-300'
+            : 'bg-slate-100 dark:bg-obsidian border-slate-300 dark:border-slateborder text-slate-700 dark:text-slate-200 hover:border-blue-500/60';
+          pillsHtml += '<button onclick="openSetModal(' + wIdx + ',' + exIdx + ',' + sIdx + ')" class="min-w-[82px] px-3 py-2.5 rounded-2xl border text-center transition active:scale-95 ' + pillCls + '">' +
+            '<div class="text-[11px] font-bold opacity-80 tabular-nums">' + s.weight + ' kg</div>' +
+            '<div class="text-base font-extrabold tabular-nums mt-0.5">' + s.reps + '<span class="text-xs font-semibold opacity-70">/' + formatRange(ex.minReps, ex.maxReps) + '</span></div>' +
+          '</button>';
+        });
+
+        cardsHtml += '<div class="rounded-3xl bg-white dark:bg-slatecard border border-slate-200 dark:border-slateborder p-4 shadow-sm space-y-3">' +
+          '<div class="flex items-start justify-between gap-2">' +
+            '<div class="min-w-0">' +
+              '<span class="inline-block px-2 py-0.5 rounded-md border text-[10px] font-bold uppercase tracking-wider mb-1 ' + mCls + '">' + lib.muscle + '</span>' +
+              '<button onclick="openExerciseModal(' + wIdx + ',' + exIdx + ')" class="block text-left text-base font-extrabold text-slate-900 dark:text-white hover:text-amber-500 transition">' + lib.name + '</button>' +
+              autoBadge +
+            '</div>' +
+            '<button onclick="openExerciseModal(' + wIdx + ',' + exIdx + ')" class="px-3 py-1.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-500 dark:text-blue-400 text-xs font-bold shrink-0">Ohje</button>' +
+          '</div>' +
+          '<div class="flex flex-wrap gap-2">' + pillsHtml + '</div>' +
+        '</div>';
+      });
+
+      return '<div class="space-y-4">' +
+        '<div class="p-1.5 rounded-2xl bg-white dark:bg-slatecard border border-slate-200 dark:border-slateborder flex gap-1">' + tabsHtml + '</div>' +
+        '<div class="space-y-3">' + cardsHtml + '</div>' +
+        '<button onclick="finishWorkout(' + wIdx + ')" class="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 font-extrabold text-sm tracking-wide shadow-lg shadow-emerald-500/20 transition">' +
+          'Viimeistele treeni & laske progressio ✓' +
+        '</button>' +
+      '</div>';
+    }
+
+    function selectWorkout(idx) {
+      state.selectedWorkoutIdx = idx;
+      saveState();
+      render();
+    }
+
+    function openSetModal(wIdx, exIdx, sIdx) {
+      const ex = state.workouts[wIdx].exercises[exIdx];
+      const lib = EXERCISE_LIBRARY[ex.exId];
+      const s = ex.sets[sIdx];
+
+      let rirBtns = '';
+      [0, 1, 2, 3, 4].forEach(r => {
+        const act = s.rir === r;
+        rirBtns += '<button type="button" onclick="setModalRir(' + r + ')" data-rir="' + r + '" class="rir-opt flex-1 py-2 rounded-xl border text-xs font-extrabold transition ' +
+          (act ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-100 dark:bg-obsidian border-slate-200 dark:border-slateborder text-slate-500') + '">' + r + '</button>';
+      });
+
+      openModal(
+        '<div class="space-y-4">' +
+          '<div class="flex items-center justify-between">' +
+            '<div>' +
+              '<div class="text-[11px] font-bold uppercase tracking-wider text-amber-500">Sarja ' + (sIdx + 1) + ' / ' + ex.sets.length + '</div>' +
+              '<h3 class="text-base font-extrabold text-slate-900 dark:text-white">' + lib.name + '</h3>' +
+            '</div>' +
+            '<button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-200 dark:bg-obsidian text-slate-500 font-bold">✕</button>' +
+          '</div>' +
+
+          '<div class="grid grid-cols-2 gap-3">' +
+            '<div class="rounded-2xl bg-slate-100 dark:bg-obsidian border border-slate-200 dark:border-slateborder p-3">' +
+              '<label class="block text-[11px] font-bold text-slate-500 mb-1">Paino (kg)</label>' +
+              '<input id="m-weight" type="number" step="0.25" value="' + s.weight + '" class="w-full bg-transparent text-2xl font-extrabold text-slate-900 dark:text-white tabular-nums outline-none" />' +
+            '</div>' +
+            '<div class="rounded-2xl bg-slate-100 dark:bg-obsidian border border-slate-200 dark:border-slateborder p-3">' +
+              '<label class="block text-[11px] font-bold text-slate-500 mb-1">Toistot (tav. ' + formatRange(ex.minReps, ex.maxReps) + ')</label>' +
+              '<input id="m-reps" type="number" step="1" value="' + s.reps + '" class="w-full bg-transparent text-2xl font-extrabold text-slate-900 dark:text-white tabular-nums outline-none" />' +
+            '</div>' +
+          '</div>' +
+
+          '<div>' +
+            '<div class="text-[11px] font-bold text-slate-500 mb-1.5">RIR (montako toistoa jäi varastoon)</div>' +
+            '<input id="m-rir" type="hidden" value="' + (s.rir ?? 2) + '" />' +
+            '<div class="flex gap-1.5">' + rirBtns + '</div>' +
+          '</div>' +
+
+          '<div class="grid grid-cols-2 gap-2.5 pt-1">' +
+            '<button onclick="saveSetEdit(' + wIdx + ',' + exIdx + ',' + sIdx + ', false)" class="py-3 rounded-2xl bg-slate-200 dark:bg-obsidian border border-slate-300 dark:border-slateborder text-slate-700 dark:text-slate-300 font-bold text-xs">Tallenna keskeneräisenä</button>' +
+            '<button onclick="saveSetEdit(' + wIdx + ',' + exIdx + ',' + sIdx + ', true)" class="py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs">Kuittaa tehdyksi ✓</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+
+    function setModalRir(val) {
+      const inp = document.getElementById('m-rir');
+      if (inp) inp.value = val;
+      document.querySelectorAll('.rir-opt').forEach(b => {
+        const act = Number(b.dataset.rir) === val;
+        b.className = 'rir-opt flex-1 py-2 rounded-xl border text-xs font-extrabold transition ' +
+          (act ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-100 dark:bg-obsidian border-slate-200 dark:border-slateborder text-slate-500');
+      });
+    }
+
+    function saveSetEdit(wIdx, exIdx, sIdx, markDone) {
+      const s = state.workouts[wIdx].exercises[exIdx].sets[sIdx];
+      s.weight = Math.max(0, parseFloat(document.getElementById('m-weight').value) || 0);
+      s.reps = Math.max(0, parseInt(document.getElementById('m-reps').value, 10) || 0);
+      s.rir = parseInt(document.getElementById('m-rir').value, 10) || 0;
+      s.done = markDone;
+      saveState();
+      closeModal();
+      render();
+      if (markDone) startRestTimer(90);
+    }
+
+    function finishWorkout(wIdx) {
+      const w = state.workouts[wIdx];
+      const totalSets = w.exercises.reduce((a, e) => a + e.sets.length, 0);
+      const doneSets = w.exercises.reduce((a, e) => a + e.sets.filter(s => s.done).length, 0);
+      if (doneSets === 0) {
+        showToast('Kuittaa ensin vähintään yksi sarja!', 'amber');
+        return;
+      }
+
+      const pct = Math.round((doneSets / totalSets) * 100);
+      const now = new Date();
+      const dStr = now.getDate() + '.' + (now.getMonth() + 1) + '.';
+      const fullDate = dStr + now.getFullYear();
+
+      // Save snapshot to history
+      const histEx = w.exercises.map(ex => {
+        const lib = EXERCISE_LIBRARY[ex.exId];
+        return {
+          name: lib ? lib.name : ex.exId,
+          sets: ex.sets.filter(s => s.done).map(s => s.weight + 'kg × ' + s.reps + '/' + formatRange(ex.minReps, ex.maxReps))
+        };
+      }).filter(x => x.sets.length > 0);
+
+      state.history.unshift({
+        id: 'h_' + Date.now(), month: 'Marraskuu', date: dStr, fullDate: fullDate,
+        title: w.title, pct: pct, exercises: histEx
+      });
+
+      // Double Progression Engine
+      const updates = [];
+      w.exercises.forEach(ex => {
+        const lib = EXERCISE_LIBRARY[ex.exId];
+        if (!lib) return;
+        const allHitTop = ex.sets.every(s => s.done && s.reps >= ex.maxReps);
+        if (allHitTop) {
+          const oldW = ex.sets[0].weight;
+          const newW = Math.round((oldW + lib.inc) * 100) / 100;
+          ex.sets.forEach(s => { s.weight = newW; s.reps = ex.minReps; s.done = false; });
+          updates.push({ name: lib.name, msg: oldW + ' kg → ' + newW + ' kg (+' + lib.inc + ' kg)', up: true });
+        } else {
+          ex.sets.forEach(s => { s.done = false; });
+          updates.push({ name: lib.name, msg: 'Paino pysyy samana (' + ex.sets[0].weight + ' kg)', up: false });
+        }
+      });
+
+      w.completedThisWeek = true;
+      w.lastDate = fullDate;
+      const lastIdx = state.progressIndex[state.progressIndex.length - 1];
+      if (lastIdx) lastIdx.val += 2;
+      stopRestTimer();
+      saveState();
+      render();
+
+      let rows = '';
+      updates.forEach(u => {
+        rows += '<div class="flex items-center justify-between py-2 border-b border-slate-200 dark:border-slateborder last:border-0 text-xs">' +
+          '<span class="font-bold text-slate-900 dark:text-white pr-2">' + u.name + '</span>' +
+          '<span class="font-extrabold shrink-0 ' + (u.up ? 'text-emerald-500' : 'text-slate-500') + '">' + u.msg + '</span>' +
+        '</div>';
+      });
+
+      openModal(
+        '<div class="space-y-4">' +
+          '<div class="text-center">' +
+            '<div class="inline-flex w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 items-center justify-center text-2xl mb-2">✓</div>' +
+            '<h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Treeni tallennettu (' + pct + '%)</h3>' +
+            '<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Automaattinen tuplaprogressio seuraavaan kertaan:</p>' +
+          '</div>' +
+          '<div class="rounded-2xl bg-slate-100 dark:bg-obsidian border border-slate-200 dark:border-slateborder px-3.5 py-1">' + rows + '</div>' +
+          '<button onclick="closeModal(); switchTab(\'home\')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-slate-950 font-extrabold text-sm">Mahtavaa, palaa kotiin</button>' +
+        '</div>'
+      );
+    }
+
+    /* =========================================================================
+     * 7. EXERCISE VIDEO & INSTRUCTIONS MODAL
+     * ========================================================================= */
+    function getFallbackAnimSVG(type) {
+      const animClass = type === 'pull' ? 'anim-pull' : (type === 'hinge' ? 'anim-hinge' : 'anim-push');
+      return '<svg viewBox="0 0 240 150" class="w-full h-full">' +
+        '<rect width="240" height="150" fill="#0B0F17"/>' +
+        '<line x1="20" y1="125" x2="220" y2="125" stroke="#1E293B" stroke-width="3"/>' +
+        '<g class="' + animClass + '">' +
+          '<circle cx="120" cy="48" r="14" fill="#F59E0B"/>' +
+          '<line x1="120" y1="62" x2="120" y2="102" stroke="#3B82F6" stroke-width="8" stroke-linecap="round"/>' +
+          '<line x1="82" y1="74" x2="158" y2="74" stroke="#10B981" stroke-width="6" stroke-linecap="round"/>' +
+          '<circle cx="78" cy="74" r="9" fill="#94A3B8"/>' +
+          '<circle cx="162" cy="74" r="9" fill="#94A3B8"/>' +
+        '</g>' +
+      '</svg>';
+    }
+
+    function openExerciseModal(wIdx, exIdx) {
+      const ex = state.workouts[wIdx].exercises[exIdx];
+      const lib = EXERCISE_LIBRARY[ex.exId];
+      if (!lib) return;
+
+      const img0 = FREE_DB_BASE + '/' + lib.slug + '/0.jpg';
+      const img1 = FREE_DB_BASE + '/' + lib.slug + '/1.jpg';
+      const ytUrl = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(lib.yt);
+      const mwUrl = 'https://musclewiki.com/exercise/' + lib.mw;
+
+      let badges = '<span class="px-2.5 py-1 rounded-lg border text-[11px] font-bold ' + (MUSCLE_COLORS[lib.muscle] || '') + '">' + lib.muscle + '</span>';
+      (lib.secondary || []).forEach(sec => {
+        badges += '<span class="px-2.5 py-1 rounded-lg border text-[11px] font-bold ' + (MUSCLE_COLORS[sec] || 'bg-slate-500/15 text-slate-400 border-slate-500/30') + '">' + sec + '</span>';
+      });
+
+      let stepsHtml = '';
+      lib.steps.forEach((st, i) => {
+        stepsHtml += '<li class="flex gap-2.5 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">' +
+          '<span class="w-5 h-5 rounded-full bg-amber-500/15 text-amber-500 font-extrabold text-[11px] flex items-center justify-center shrink-0 mt-0.5">' + (i + 1) + '</span>' +
+          '<span>' + st + '</span>' +
+        '</li>';
+      });
+
+      openModal(
+        '<div class="space-y-4">' +
+          '<div class="relative rounded-2xl overflow-hidden bg-obsidian border border-slateborder aspect-[16/10] flex items-center justify-center">' +
+            '<img id="ex-demo-img" src="' + img0 + '" alt="' + lib.name + '" class="w-full h-full object-cover" onerror="showFallbackAnim(\'' + lib.anim + '\')" />' +
+            '<div id="ex-demo-fallback" class="hidden w-full h-full">' + getFallbackAnimSVG(lib.anim) + '</div>' +
+            '<button onclick="closeModal()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 text-white font-bold text-xs">✕</button>' +
+          '</div>' +
+
+          '<div class="flex gap-2">' +
+            '<a href="' + ytUrl + '" target="_blank" rel="noopener" class="flex-1 py-2 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-bold text-center">YouTube-video ↗</a>' +
+            '<a href="' + mwUrl + '" target="_blank" rel="noopener" class="flex-1 py-2 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 text-xs font-bold text-center">MuscleWiki ↗</a>' +
+          '</div>' +
+
+          '<div class="flex items-start justify-between gap-2">' +
+            '<div>' +
+              '<div class="flex flex-wrap gap-1.5 mb-1.5">' + badges + '</div>' +
+              '<h3 class="text-lg font-extrabold text-slate-900 dark:text-white leading-snug">' + lib.name + '</h3>' +
+            '</div>' +
+            '<button onclick="openSwapExerciseModal(' + wIdx + ',' + exIdx + ')" class="px-3 py-2 rounded-xl bg-amber-500 text-slate-950 text-xs font-extrabold shrink-0">Vaihda liike</button>' +
+          '</div>' +
+
+          '<div>' +
+            '<div class="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-2">Tekniikkaohjeet</div>' +
+            '<ol class="space-y-2">' + stepsHtml + '</ol>' +
+          '</div>' +
+        '</div>'
+      );
+
+      let frame = 0;
+      if (videoFrameInterval) clearInterval(videoFrameInterval);
+      videoFrameInterval = setInterval(() => {
+        const img = document.getElementById('ex-demo-img');
+        if (!img || img.classList.contains('hidden')) return;
+        frame = frame === 0 ? 1 : 0;
+        img.src = frame === 0 ? img0 : img1;
+      }, 1300);
+    }
+
+    function showFallbackAnim(type) {
+      const img = document.getElementById('ex-demo-img');
+      const fb = document.getElementById('ex-demo-fallback');
+      if (img) img.classList.add('hidden');
+      if (fb) { fb.innerHTML = getFallbackAnimSVG(type); fb.classList.remove('hidden'); }
+    }
+
+    function openSwapExerciseModal(wIdx, exIdx) {
+      const current = state.workouts[wIdx].exercises[exIdx];
+      const curLib = EXERCISE_LIBRARY[current.exId];
+      const alternatives = Object.values(EXERCISE_LIBRARY).filter(
+        e => e.muscle === curLib.muscle && e.id !== curLib.id && !state.settings.excludedExercises.includes(e.id)
+      );
+
+      let list = '';
+      if (alternatives.length === 0) {
+        list = '<div class="text-xs text-slate-500 py-4 text-center">Ei muita vaihtoehtoja tälle lihasryhmälle.</div>';
+      } else {
+        alternatives.forEach(alt => {
+          list += '<button onclick="confirmSwapExercise(' + wIdx + ',' + exIdx + ',\'' + alt.id + '\')" class="w-full text-left p-3.5 rounded-2xl bg-slate-100 dark:bg-obsidian border border-slate-200 dark:border-slateborder hover:border-amber-500 flex items-center justify-between transition">' +
+            '<span class="text-sm font-bold text-slate-900 dark:text-white">' + alt.name + '</span>' +
+            '<span class="text-xs font-bold text-amber-500">Valitse →</span>' +
+          '</button>';
+        });
+      }
+
+      openModal(
+        '<div class="space-y-3">' +
+          '<div class="flex items-center justify-between">' +
+            '<h3 class="text-base font-extrabold text-slate-900 dark:text-white">Vaihda liike (' + curLib.muscle + ')</h3>' +
+            '<button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-200 dark:bg-obsidian text-slate-500 font-bold">✕</button>' +
+          '</div>' +
+          '<div class="space-y-2">' + list + '</div>' +
+        '</div>'
+      );
+    }
+
+    function confirmSwapExercise(wIdx, exIdx, newExId) {
+      state.workouts[wIdx].exercises[exIdx].exId = newExId;
+      state.workouts[wIdx].exercises[exIdx].autoSwapped = false;
+      saveState();
+      closeModal();
+      render();
+      showToast('Liike vaihdettu: ' + EXERCISE_LIBRARY[newExId].name, 'emerald');
+    }
+
+    /* =========================================================================
+     * 8. TAB 3: HISTORIA (HISTORY)
+     * ========================================================================= */
+    function renderHistory() {
+      const months = ['Marraskuu', 'Lokakuu'];
+      let sections = '';
+
+      months.forEach(m => {
+        const items = state.history.filter(h => h.month === m);
+        if (!items.length) return;
+        let tiles = '';
+        items.forEach(h => {
+          const good = h.pct >= 80;
+          const cls = good
+            ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-500 dark:text-emerald-300'
+            : 'bg-amber-500/20 border-amber-500/50 text-amber-600 dark:text-amber-300';
+          tiles += '<button onclick="openHistoryDetail(\'' + h.id + '\')" class="rounded-2xl border p-3 text-center transition active:scale-95 ' + cls + '">' +
+            '<div class="text-[11px] font-bold opacity-85">' + h.date + '</div>' +
+            '<div class="text-xl font-extrabold tabular-nums mt-0.5">' + h.pct + '%</div>' +
+          '</button>';
+        });
+
+        sections += '<section class="space-y-2.5">' +
+          '<h2 class="text-lg font-extrabold text-slate-900 dark:text-white">' + m + '</h2>' +
+          '<div class="rounded-3xl bg-white dark:bg-slatecard border border-slate-200 dark:border-slateborder p-3.5 grid grid-cols-4 gap-2">' + tiles + '</div>' +
+        '</section>';
+      });
+
+      return '<div class="space-y-5">' +
+        '<h1 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Treenihistoria</h1>' +
+        sections +
+      '</div>';
+    }
+
+    function openHistoryDetail(id) {
+      const h = state.history.find(x => x.id === id);
+      if (!h) return;
+      let exHtml = '';
+      (h.exercises || []).forEach(ex => {
+        exHtml += '<div class="rounded-2xl bg-slate-100 dark:bg-obsidian border border-slate-200 dark:border-slateborder p-3">' +
+          '<div class="text-xs font-extrabold text-slate-900 dark:text-white mb-1.5">' + ex.name + '</div>' +
+          '<div class="flex flex-wrap gap-1.5">' +
+            ex.sets.map(s => '<span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-500 dark:text-emerald-300 text-[11px] font-bold tabular-nums">' + s + '</span>').join('') +
+          '</div>' +
+        '</div>';
+      });
+
+      openModal(
+        '<div class="space-y-3">' +
+          '<div class="flex items-center justify-between">' +
+            '<div>' +
+              '<div class="text-[11px] font-bold text-slate-500">' + h.title + ' • ' + h.pct + '%</div>' +
+              '<h3 class="text-lg font-extrabold text-slate-900 dark:text-white">' + h.fullDate + '</h3>' +
+            '</div>' +
+            '<button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-200 dark:bg-obsidian text-slate-500 font-bold">✕</button>' +
+          '</div>' +
+          '<div class="space-y-2">' + exHtml + '</div>' +
+        '</div>'
+      );
+    }
+
+    /* =========================================================================
+     * 9. TAB 4: KEHITYS (PROGRESS)
+     * ========================================================================= */
+    function renderProgress() {
+      const ranges = [
+        { k: '4', l: '4 vk' }, { k: '10', l: '10 vk' }, { k: '25', l: '25 vk' }, { k: '52', l: '52 vk' }, { k: 'all', l: 'Kaikki vk' }
+      ];
+      let pts = state.progressIndex;
+      if (state.progressRange !== 'all') {
+        const lim = state.currentWeek - Number(state.progressRange);
+        pts = pts.filter(p => p.wk >= lim);
+        if (pts.length < 2) pts = state.progressIndex.slice(-2);
+      }
+
+      const maxVal = Math.max(300, ...pts.map(p => p.val));
+      const minVal = 0;
+      const w = 320, h = 170, padL = 32, padR = 12, padT = 12, padB = 24;
+      const coords = pts.map((p, i) => {
+        const x = padL + (i / Math.max(1, pts.length - 1)) * (w - padL - padR);
+        const y = h - padB - ((p.val - minVal) / (maxVal - minVal)) * (h - padT - padB);
+        return { x, y, wk: p.wk, val: p.val };
+      });
+      const poly = coords.map(c => c.x.toFixed(1) + ',' + c.y.toFixed(1)).join(' ');
+      const area = poly + ' ' + coords[coords.length - 1].x.toFixed(1) + ',' + (h - padB) + ' ' + coords[0].x.toFixed(1) + ',' + (h - padB);
+
+      let rangeBtns = ranges.map(r => {
+        const act = state.progressRange === r.k;
+        return '<button onclick="setProgressRange(\'' + r.k + '\')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition ' +
+          (act ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200') + '">' + r.l + '</button>';
+      }).join('');
+
+      // Accordion by muscle group
+      let accHtml = '';
+      MUSCLE_GROUPS.forEach(m => {
+        const exs = Object.values(EXERCISE_LIBRARY).filter(e => e.muscle === m);
+        if (!exs.length) return;
+        const isOpen = !!state.openAccordions[m];
+        let body = '';
+        if (isOpen) {
+          body = '<div class="px-4 pb-3 space-y-2 border-t border-slate-200 dark:border-slateborder pt-2.5">' +
+            exs.map(e => {
+              let bestW = 0, bestR = 0;
+              state.workouts.forEach(wk => wk.exercises.forEach(we => {
+                if (we.exId === e.id) we.sets.forEach(s => { if (s.weight > bestW) { bestW = s.weight; bestR = s.reps; } });
+              }));
+              const rm = bestW ? estimate1RM(bestW, bestR) : 0;
+              return '<div class="flex items-center justify-between text-xs py-1">' +
+                '<span class="font-semibold text-slate-800 dark:text-slate-200">' + e.name + '</span>' +
+                '<span class="text-slate-500 tabular-nums shrink-0">' + (bestW ? (bestW + 'kg × ' + bestR + ' • 1RM ' + rm + 'kg') : 'Ei vielä dataa') + '</span>' +
+              '</div>';
+            }).join('') +
+          '</div>';
+        }
+        accHtml += '<div class="rounded-2xl bg-white dark:bg-slatecard border border-slate-200 dark:border-slateborder overflow-hidden">' +
+          '<button onclick="toggleAccordion(\'' + m + '\')" class="w-full px-4 py-3.5 flex items-center justify-between text-sm font-extrabold text-slate-900 dark:text-white">' +
+            '<span>' + m + '</span><span class="text-slate-400 text-xs">' + (isOpen ? '▲' : '▼') + '</span>' +
+          '</button>' + body +
+        '</div>';
+      });
+
+      return '<div class="space-y-5">' +
+        '<h1 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Kehitys</h1>' +
+        '<section class="rounded-3xl bg-white dark:bg-slatecard border border-slate-200 dark:border-slateborder p-4 shadow-sm space-y-3">' +
+          '<div class="flex items-center justify-between">' +
+            '<h2 class="text-sm font-extrabold text-slate-900 dark:text-white">Kokonaiskehitysindeksi</h2>' +
+            '<span class="text-xs font-extrabold text-blue-500 tabular-nums">' + pts[pts.length - 1].val + ' pts</span>' +
+          '</div>' +
+          '<div class="flex items-center justify-between bg-slate-100 dark:bg-obsidian p-1 rounded-xl">' + rangeBtns + '</div>' +
+          '<svg viewBox="0 0 ' + w + ' ' + h + '" class="w-full h-auto overflow-visible">' +
+            '<defs><linearGradient id="idxGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3B82F6" stop-opacity="0.35"/><stop offset="100%" stop-color="#3B82F6" stop-opacity="0"/></linearGradient></defs>' +
+            '<line x1="' + padL + '" y1="' + (h - padB) + '" x2="' + (w - padR) + '" y2="' + (h - padB) + '" stroke="#334155" stroke-width="1"/>' +
+            '<polygon points="' + area + '" fill="url(#idxGrad)"/>' +
+            '<polyline points="' + poly + '" fill="none" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
+            coords.map(c => '<circle cx="' + c.x.toFixed(1) + '" cy="' + c.y.toFixed(1) + '" r="3.5" fill="#F59E0B" stroke="#0B0F17" stroke-width="1.5"/>').join('') +
+            '<text x="' + padL + '" y="' + (h - 6) + '" fill="#94A3B8" font-size="9">Vk ' + pts[0].wk + '</text>' +
+            '<text x="' + (w - padR - 26) + '" y="' + (h - 6) + '" fill="#94A3B8" font-size="9">Vk ' + pts[pts.length - 1].wk + '</text>' +
+          '</svg>' +
+        '</section>' +
+
+        '<section class="space-y-2.5">' +
+          '<h2 class="text-base font-extrabold text-slate-900 dark:text-white">Liikekohtaiset tilastot</h2>' +
+          accHtml +
+        '</section>' +
+      '</div>';
+    }
+
+    function setProgressRange(r) {
+      state.progressRange = r;
+      saveState();
+      render();
+    }
+
+    function toggleAccordion(m) {
+      state.openAccordions[m] = !state.openAccordions[m];
+      saveState();
+      render();
+    }
+
+    /* =========================================================================
+     * 10. TAB 5: ASETUKSET (SETTINGS)
+     * ========================================================================= */
+    function renderSettings() {
+      const cycBtns = [8, 10, 12].map(wk => {
+        const act = state.rotationCycleWeeks === wk;
+        return '<button onclick="setRotationCycle(' + wk + ')" class="flex-1 py-2 rounded-xl border text-xs font-extrabold transition ' +
+          (act ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-100 dark:bg-obsidian border-slate-200 dark:border-slateborder text-slate-500') + '">' + wk + ' vk</button>';
+      }).join('');
+
+      return '<div class="space-y-4">' +
+        '<h1 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Asetukset</h1>' +
+
+        // Brand & Logo Card
+        '<section class="rounded-3xl bg-white dark:bg-slatecard border border-slate-200 dark:border-slateborder p-4 shadow-sm space-y-3">' +
+          '<div class="flex items-center gap-3.5">' +
+            '<div class="w-16 h-16 rounded-full bg-white ring-2 ring-amber-500/80 shadow-md overflow-hidden shrink-0">' + getKettuLogoMarkup('set') + '</div>' +
+            '<div>' +
+              '<div class="text-base font-extrabold text-slate-900 dark:text-white">Kettu <span class="text-amber-500">Gym</span></div>' +
+              '<div class="text-[11px] text-slate-500 dark:text-slate-400">Tuplaprogressio & liikekierto • PWA</div>' +
+              '<div class="text-[10px] font-bold text-amber-500 mt-0.5">' + (activeLogoDataUrl ? 'Käytössä: Oma PNG-logo' : 'Käytössä: Kettu-maskotti (SVG)') + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<input id="custom-logo-input" type="file" accept="image/*" class="hidden" onchange="handleCustomLogoUpload(event)" />' +
+          '<div class="grid grid-cols-2 gap-2">' +
+            '<button onclick="triggerCustomLogoUpload()" class="py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-600 dark:text-amber-400 text-xs font-bold">Lataa oma PNG-logo</button>' +
+            '<button onclick="resetCustomLogo()" class="py-2.5 rounded-xl bg-slate-100 dark:bg-obsidian border border-slate-200 dark:border-slateborder text-slate-600 dark:text-slate-300 text-xs font-bold">Palauta oletuslogo</button>' +
+          '</div>' +
+        '</section>' +
+
+        // Auto Rotation Card
+        '<section class="rounded-3xl bg-white dark:bg-slatecard border border-slate-200 dark:border-slateborder p-4 shadow-sm space-y-3">' +
+          '<div class="flex items-center justify-between">' +
+            '<h2 class="text-sm font-extrabold text-slate-900 dark:text-white">Automaattinen liikkeiden kierto</h2>' +
+            '<span class="text-xs font-bold text-blue-500">Vk ' + state.rotationWeek + '/' + state.rotationCycleWeeks + '</span>' +
+          '</div>' +
+          '<div class="flex gap-2">' + cycBtns + '</div>' +
+          '<button onclick="rotateExercisesNow()" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold transition">Kierrätä liikkeet nyt ↻</button>' +
+        '</section>' +
+
+        // Workout Settings List
+        '<section class="rounded-3xl bg-white dark:bg-slatecard border border-slate-200 dark:border-slateborder p-2 shadow-sm divide-y divide-slate-200 dark:divide-slateborder">' +
+          settingsRow('Vaihda treenitavoite', state.settings.goals.length + ' valittu', 'openGoalsModal()') +
+          settingsRow('Vaihda treenimäärä', state.settings.workoutsPerWeek + ' × / vko', 'openFrequencyModal()') +
+          settingsRow('Vaihda treenijako', state.settings.split, 'openSplitModal()') +
+          settingsRow('Vaihda treenirytmi', state.settings.scheduleDays.filter(Boolean).length + ' päivää', 'openRhythmModal()') +
+          settingsRow('Treenin kesto', state.settings.durationMin + ' min', 'openDurationModal()') +
+          settingsRow('Rajaa liikkeitä pois / loukkaantuminen', state.settings.excludedExercises.length + ' rajattu', 'openExcludeModal()') +
+        '</section>' +
+
+        // Theme, Export & Reset
+        '<section class="rounded-3xl bg-white dark:bg-slatecard border border-slate-200 dark:border-slateborder p-4 shadow-sm space-y-2.5">' +
+          '<button onclick="toggleTheme()" class="w-full py-2.5 px-3.5 rounded-xl bg-slate-100 dark:bg-obsidian border border-slate-200 dark:border-slateborder flex items-center justify-between text-xs font-bold">' +
+            '<span>Teema</span><span class="text-amber-500">' + (state.theme === 'dark' ? 'Tumma (Nordic Dark)' : 'Vaalea') + '</span>' +
+          '</button>' +
+          '<div class="grid grid-cols-2 gap-2">' +
+            '<button onclick="exportCSV()" class="py-2.5 rounded-xl bg-slate-100 dark:bg-obsidian border border-slate-200 dark:border-slateborder text-xs font-bold">Vie CSV</button>' +
+            '<button onclick="exportJSON()" class="py-2.5 rounded-xl bg-slate-100 dark:bg-obsidian border border-slate-200 dark:border-slateborder text-xs font-bold">Vie JSON</button>' +
+          '</div>' +
+          '<button onclick="openResetModal()" class="w-full py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-bold">Palauta oletusasetukset</button>' +
+        '</section>' +
+      '</div>';
+    }
+
+    function settingsRow(label, val, fn) {
+      return '<button onclick="' + fn + '" class="w-full px-3 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-obsidian/60 rounded-2xl transition">' +
+        '<span class="text-xs font-bold text-slate-900 dark:text-white">' + label + '</span>' +
+        '<span class="text-xs font-semibold text-slate-500">' + val + ' ›</span>' +
+      '</button>';
+    }
+
+    function setRotationCycle(wk) {
+      state.rotationCycleWeeks = wk;
+      saveState();
+      render();
+      showToast('Kiertoväli asetettu: ' + wk + ' viikkoa', 'blue');
+    }
+
+    function rotateExercisesNow() {
+      let swapped = 0;
+      state.workouts.forEach(w => {
+        w.exercises.forEach(ex => {
+          const lib = EXERCISE_LIBRARY[ex.exId];
+          if (!lib) return;
+          const alts = Object.values(EXERCISE_LIBRARY).filter(
+            a => a.muscle === lib.muscle && a.id !== lib.id && !state.settings.excludedExercises.includes(a.id)
+          );
+          if (alts.length > 0) {
+            ex.exId = alts[Math.floor(Math.random() * alts.length)].id;
+            ex.autoSwapped = true;
+            swapped++;
+          }
+        });
+      });
+      state.rotationWeek = 1;
+      saveState();
+      render();
+      showToast('Kierrätetty ' + swapped + ' liikettä uuteen jaksoon!', 'emerald');
+    }
+
+    let tempGoals = [];
+    function openGoalsModal() {
+      tempGoals = [...state.settings.goals];
+      renderGoalsModal();
+    }
+
+    function renderGoalsModal() {
+      const items = GOALS_LIST.map(g => {
+        const act = tempGoals.includes(g.id);
+        return '<button onclick="toggleTempGoal(\'' + g.id + '\')" class="w-full text-left p-3 rounded-2xl border transition ' +
+          (act ? 'bg-blue-600/20 border-blue-500 text-slate-900 dark:text-white' : 'bg-slate-100 dark:bg-obsidian border-slate-200 dark:border-slateborder text-slate-600 dark:text-slate-300') + '">' +
+          '<div class="text-xs font-extrabold">' + g.name + '</div>' +
+          '<div class="text-[11px] opacity-75 mt-0.5">' + g.desc + '</div>' +
+        '</button>';
+      }).join('');
+
+      openModal(
+        '<div class="space-y-3">' +
+          '<div class="flex items-center justify-between"><h3 class="text-base font-extrabold text-slate-900 dark:text-white">Vaihda treenitavoite (max 3)</h3><button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-200 dark:bg-obsidian text-slate-500 font-bold">✕</button></div>' +
+          '<div class="space-y-2">' + items + '</div>' +
+          '<button onclick="confirmGoalsStep()" class="w-full py-3 rounded-2xl bg-amber-500 text-slate-950 font-extrabold text-sm">Jatka</button>' +
+        '</div>'
+      );
+    }
+
+    function toggleTempGoal(id) {
+      if (tempGoals.includes(id)) tempGoals = tempGoals.filter(x => x !== id);
+      else if (tempGoals.length < 3) tempGoals.push(id);
+      else showToast('Voit valita enintään 3 tavoitetta', 'amber');
+      renderGoalsModal();
+    }
+
+    function confirmGoalsStep() {
+      openModal(
+        '<div class="space-y-4 text-center">' +
+          '<h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Huom!</h3>' +
+          '<p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">Tavoitteen vaihtaminen päivittää ohjelman toistoalueet vastaamaan uutta tavoitetta. Progressiot pyritään säilyttämään nykyisissä liikkeissä.</p>' +
+          '<div class="grid grid-cols-2 gap-2.5">' +
+            '<button onclick="closeModal()" class="py-3 rounded-2xl bg-slate-200 dark:bg-obsidian text-xs font-bold">Peruuta</button>' +
+            '<button onclick="applyGoals()" class="py-3 rounded-2xl bg-emerald-500 text-slate-950 text-xs font-extrabold">Vahvista</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+
+    function applyGoals() {
+      state.settings.goals = tempGoals.length ? tempGoals : ['hypertrophy'];
+      const isStrength = state.settings.goals.includes('strength');
+      state.workouts.forEach(w => w.exercises.forEach(ex => {
+        ex.minReps = isStrength ? 4 : 8;
+        ex.maxReps = isStrength ? 6 : 12;
+      }));
+      saveState();
+      closeModal();
+      render();
+      showToast('Treenitavoite päivitetty!', 'emerald');
+    }
+
+    function openFrequencyModal() {
+      const btns = [1,2,3,4,5,6,7].map(n => {
+        const act = state.settings.workoutsPerWeek === n;
+        return '<button onclick="setFrequency(' + n + ')" class="py-3 rounded-2xl border text-base font-extrabold ' +
+          (act ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-100 dark:bg-obsidian border-slate-200 dark:border-slateborder') + '">' + n + '</button>';
+      }).join('');
+      openModal('<div class="space-y-4"><h3 class="text-base font-extrabold">Treenimäärä viikossa</h3><div class="grid grid-cols-4 gap-2">' + btns + '</div></div>');
+    }
+    function setFrequency(n) { state.settings.workoutsPerWeek = n; saveState(); closeModal(); render(); showToast('Treenimäärä: ' + n + ' × / vko', 'blue'); }
+
+    function openSplitModal() {
+      const splits = ['Koko, Koko, Koko', 'Koko, Ala, Ylä', 'Ala, Ylä, Koko'];
+      const btns = splits.map(sp => '<button onclick="setSplit(\'' + sp + '\')" class="w-full p-3.5 rounded-2xl border text-left text-xs font-extrabold ' +
+        (state.settings.split === sp ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-100 dark:bg-obsidian border-slate-200 dark:border-slateborder') + '">' + sp + '</button>').join('');
+      openModal('<div class="space-y-3"><h3 class="text-base font-extrabold">Vaihda treenijako</h3>' + btns + '</div>');
+    }
+    function setSplit(sp) { state.settings.split = sp; saveState(); closeModal(); render(); showToast('Treenijako: ' + sp, 'blue'); }
+
+    function openRhythmModal() {
+      const days = ['Maanantai','Tiistai','Keskiviikko','Torstai','Perjantai','Lauantai','Sunnuntai'];
+      const rows = days.map((d, i) => {
+        const on = state.settings.scheduleDays[i];
+        return '<button onclick="toggleRhythmDay(' + i + ')" class="w-full p-3 rounded-2xl border flex justify-between text-xs font-bold ' +
+          (on ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-500' : 'bg-slate-100 dark:bg-obsidian border-slate-200 dark:border-slateborder text-slate-500') + '">' +
+          '<span>' + d + '</span><span>' + (on ? 'Treeni' : 'Välipäivä') + '</span></button>';
+      }).join('');
+      openModal('<div class="space-y-2.5"><div class="flex justify-between items-center mb-1"><h3 class="text-base font-extrabold">Treenirytmi</h3><button onclick="closeModal()" class="text-xs font-bold text-amber-500">Valmis</button></div>' + rows + '</div>');
+    }
+    function toggleRhythmDay(i) { state.settings.scheduleDays[i] = !state.settings.scheduleDays[i]; saveState(); render(); openRhythmModal(); }
+
+    function openDurationModal() {
+      const btns = [45, 60, 75].map(m => '<button onclick="setDuration(' + m + ')" class="flex-1 py-3 rounded-2xl border text-sm font-extrabold ' +
+        (state.settings.durationMin === m ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-100 dark:bg-obsidian border-slate-200 dark:border-slateborder') + '">' + m + ' min</button>').join('');
+      openModal('<div class="space-y-4"><h3 class="text-base font-extrabold">Treenin tavoitekesto</h3><div class="flex gap-2">' + btns + '</div></div>');
+    }
+    function setDuration(m) { state.settings.durationMin = m; saveState(); closeModal(); render(); showToast('Treenin kesto: ' + m + ' min', 'blue'); }
+
+    function openExcludeModal() {
+      const rows = Object.values(EXERCISE_LIBRARY).map(e => {
+        const ex = state.settings.excludedExercises.includes(e.id);
+        return '<button onclick="toggleExclude(\'' + e.id + '\')" class="w-full p-2.5 rounded-xl border flex justify-between text-xs font-bold ' +
+          (ex ? 'bg-rose-500/15 border-rose-500/50 text-rose-400' : 'bg-slate-100 dark:bg-obsidian border-slate-200 dark:border-slateborder') + '">' +
+          '<span>' + e.name + '</span><span>' + (ex ? 'Rajattu pois' : 'Käytössä') + '</span></button>';
+      }).join('');
+      openModal('<div class="space-y-2"><div class="flex justify-between items-center mb-1"><h3 class="text-base font-extrabold">Rajaa liikkeitä pois</h3><button onclick="closeModal()" class="text-xs font-bold text-amber-500">Valmis</button></div><div class="max-h-72 overflow-y-auto space-y-1.5">' + rows + '</div></div>');
+    }
+    function toggleExclude(id) {
+      const arr = state.settings.excludedExercises;
+      if (arr.includes(id)) state.settings.excludedExercises = arr.filter(x => x !== id);
+      else arr.push(id);
+      saveState();
+      openExcludeModal();
+    }
+
+    function toggleTheme() {
+      state.theme = state.theme === 'dark' ? 'light' : 'dark';
+      saveState();
+      render();
+    }
+
+    function downloadFile(name, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = name; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportCSV() {
+      let csv = 'Päivä,Treeni,Valmius%,Liike,Sarjat\n';
+      state.history.forEach(h => {
+        (h.exercises || []).forEach(e => {
+          csv += '"' + h.fullDate + '","' + h.title + '",' + h.pct + ',"' + e.name + '","' + e.sets.join('; ') + '"\n';
+        });
+      });
+      downloadFile('kettu-gym-treenit.csv', csv, 'text/csv;charset=utf-8');
+      showToast('CSV-tiedosto ladattu!', 'emerald');
+    }
+
+    function exportJSON() {
+      downloadFile('kettu-gym-data.json', JSON.stringify(state, null, 2), 'application/json');
+      showToast('JSON-varmuuskopio ladattu!', 'emerald');
+    }
+
+    function openResetModal() {
+      openModal(
+        '<div class="space-y-4 text-center">' +
+          '<h3 class="text-base font-extrabold text-slate-900 dark:text-white">Palautetaanko oletusdata?</h3>' +
+          '<p class="text-xs text-slate-500">Kaikki tekemäsi muutokset palautuvat alkutilaan.</p>' +
+          '<div class="grid grid-cols-2 gap-2">' +
+            '<button onclick="closeModal()" class="py-3 rounded-2xl bg-slate-200 dark:bg-obsidian text-xs font-bold">Peruuta</button>' +
+            '<button onclick="confirmReset()" class="py-3 rounded-2xl bg-rose-500 text-white text-xs font-extrabold">Palauta</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+
+    function confirmReset() {
+      localStorage.removeItem(STORAGE_KEY);
+      state = getDefaultState();
+      saveState();
+      closeModal();
+      render();
+      showToast('Oletusasetukset palautettu', 'blue');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initLogoSystem();
+      render();
+    });
+  </script>
+</body>
+</html>
